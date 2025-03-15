@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Order Page</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <section id="login" class="container">
+        <h2>User Login</h2>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <input type="text" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </section>
+    
+    <header>
+        <h1>Place Your Order</h1>
+        <nav>
+            <ul>
+                <li><button onclick="handleLogout()">Logout</button></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <section id="mainContent" class="hidden">
+        <h2>Order a Product</h2>
+        <form id="customerOrderForm" onsubmit="placeOrder(event)">
+            <input type="text" id="orderProductName" placeholder="Product Name" required>
+            <input type="number" id="orderQuantity" placeholder="Quantity" required>
+            <button type="submit">Place Order</button>
+        </form>
+    </section>
+    
+    <section class="container">
+        <h2>Orders List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Order Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="customerOrderTable">
+                <!-- Orders will be dynamically added here -->
+            </tbody>
+        </table>
+    </section>
+    
+    <script>
+        window.onload = function () {
+            if (!localStorage.getItem("loggedIn")) {
+                document.getElementById("login").style.display = "block";
+                document.getElementById("mainContent").style.display = "none";
+            } else {
+                document.getElementById("login").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+                loadOrders();
+            }
+        };
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            
+            if (email === "1234" && password === "1234") {
+                localStorage.setItem("loggedIn", true);
+                document.getElementById("login").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+                loadOrders();
+            } else {
+                alert("Invalid Login Credentials");
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("loggedIn");
+            document.getElementById("login").style.display = "block";
+            document.getElementById("mainContent").style.display = "none";
+            document.querySelector("header").style.display = "none";
+            document.querySelectorAll("section.container").forEach(section => {
+                if (section.id !== "login") {
+                    section.style.display = "none";
+                }
+            });
+        }
+
+        function placeOrder(event) {
+            event.preventDefault();
+            const productName = document.getElementById('orderProductName').value;
+            const quantity = parseInt(document.getElementById('orderQuantity').value);
+            const orderTime = new Date().toLocaleString();
+            
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderId = orders.length + 1;
+            
+            const orderData = {
+                orderId,
+                productName,
+                quantity,
+                orderTime,
+                status: "Pending"
+            };
+            
+            orders.push(orderData);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            
+            alert('Order placed successfully!');
+            document.getElementById('customerOrderForm').reset();
+            loadOrders();
+        }
+        
+        function loadOrders() {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const table = document.getElementById('customerOrderTable');
+            table.innerHTML = "";
+            
+            orders.forEach(order => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td>${order.orderId}</td>
+                    <td>${order.productName}</td>
+                    <td>${order.quantity}</td>
+                    <td>${order.orderTime}</td>
+                    <td id="status-${order.orderId}">${order.status}</td>
+                    <td><button onclick="deleteOrder(${order.orderId})">Delete</button></td>
+                `;
+            });
+        }
+        
+        function deleteOrder(orderId) {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders = orders.filter(order => order.orderId !== orderId);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            loadOrders();
+        }
+        
+        function syncOrderStatus() {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.forEach(order => {
+                let statusElement = document.getElementById(`status-${order.orderId}`);
+                if (statusElement) {
+                    statusElement.textContent = order.status;
+                }
+            });
+        }
+        
+        window.addEventListener("storage", function (event) {
+            if (event.key === "orders") {
+                loadOrders();
+            }
+        });
+        setInterval(function() {
+            loadOrders();
+        }, 2000);
+    </script>
+</body>
+</html>
